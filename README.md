@@ -6,3 +6,7 @@
 5. "npm install -g nodemon"
 6. "nodemon bin/www"
 7. Go to http://localhost:3000 on your browser
+
+#Create Databasae
+1. Install MySQL Workbench
+2. Run the waterMeter SQL query to create the database
