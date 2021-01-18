@@ -10,6 +10,39 @@ async function getMultiple(){
   }
 }
 
+async function getMultipleFilterBlock(block){
+  const Buildings = await db.query(`
+  SELECT * FROM c180_property.propertyunits WHERE UnitBlock = ?;
+  `,[block]);
+
+  return {
+    Buildings
+  }
+}
+
+async function getMultipleFilterFloor(floor){
+  const Buildings = await db.query(`
+  SELECT * FROM c180_property.propertyunits WHERE UnitFloor = ?;
+  `,[floor]);
+
+  return {
+    Buildings
+  }
+}
+
+async function getMultipleFilterAll(block,floor){
+  console.log(block)
+  console.log(floor)
+  const Buildings = await db.query(`
+  SELECT * FROM c180_property.propertyunits WHERE UnitBlock = ? AND UnitFloor = ?;
+  `,[block,floor]);
+
+  return {
+    Buildings
+  }
+}
+
+
 async function getSpecific(id){
   const Records = await db.query(`
   SELECT RecordID, RecordTime, UserName,RecordPropertyID,UnitBlock,UnitFloor,UnitName,RecordReading,RecordStatus 
@@ -97,5 +130,8 @@ module.exports = {
   getSpecific,
   insert,
   getUsage,
-  getUsageAvg
+  getUsageAvg,
+  getMultipleFilterBlock,
+  getMultipleFilterFloor,
+  getMultipleFilterAll
 }
