@@ -10,6 +10,16 @@ async function getMultiple(){
   }
 }
 
+async function getOneBuilding(id){
+  const Buildings = await db.query(`
+  SELECT * FROM c180_property.propertyunits WHERE UnitID = ?;
+  `,)[id];
+
+  return {
+    Buildings
+  }
+}
+
 async function getMultipleFilterBlock(block){
   const Buildings = await db.query(`
   SELECT * FROM c180_property.propertyunits WHERE UnitBlock = ?;
@@ -111,8 +121,8 @@ async function insert(quote){
   validateCreate(quote);
 
   const result = await db.query(
-    'INSERT INTO WaterMeterRecord(RecordUserID,RecordPropertyID,RecordReading,RecordStatus) Values(001,?,?,"Pending");;', 
-    [quote.SubmitRecordID, quote.SubmitReading]
+    'INSERT INTO WaterMeterRecord(RecordUserID,RecordPropertyID,RecordReading,RecordStatus) Values(?,?,?,"Pending");;', 
+    [quote.SubmitUserID,quote.SubmitRecordID, quote.SubmitReading]
   );
 
   let message = 'Error in creating quote';
@@ -133,5 +143,6 @@ module.exports = {
   getUsageAvg,
   getMultipleFilterBlock,
   getMultipleFilterFloor,
-  getMultipleFilterAll
+  getMultipleFilterAll,
+  getOneBuilding
 }

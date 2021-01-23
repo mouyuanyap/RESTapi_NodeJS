@@ -12,6 +12,15 @@ router.get('/', authorize(),async function(req, res, next) {
   }
 });
 
+router.get('/get/:id', authorize(),async function(req, res, next) {
+  try {
+    res.json(await building.getOneBuilding(req.params.id));
+  } catch (err) {
+    console.error(`Error while getting quotes `, err.message);
+    next(err);
+  }
+});
+
 router.get('/:id',authorize(), async function(req, res, next) {
   try {
     res.json(await building.getSpecific(req.params.id));
