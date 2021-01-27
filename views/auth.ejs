@@ -14,8 +14,12 @@
             var apiUrl = 'http://localhost:3000/buildings/1';
             var obj = JSON.parse('<%-title%>');
         
-        document.getElementById("ok").innerHTML = decodeURIComponent(document.cookie).slice(8,);
-            sessionStorage.setItem("token", decodeURIComponent(document.cookie).slice(8,));
+            document.getElementById("ok").innerHTML = obj.token
+            sessionStorage.clear()
+            sessionStorage.setItem("token", obj.token);
+
+
+            console.log(sessionStorage.getItem("token"))
 
             var xhttp = new XMLHttpRequest();
             xhttp.onreadystatechange = function() {
@@ -25,7 +29,8 @@
             };
             xhttp.open("GET", "http://localhost:3000/buildings/", true);
             xhttp.setRequestHeader("Authorization", "Bearer " + sessionStorage.getItem("token"));
-            xhttp.send()
+            
+            xhttp.send();
         }
 
         
