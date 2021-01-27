@@ -59,7 +59,7 @@ async function getSpecific(id){
   FROM c180_property.watermeterrecord JOIN c180_property.propertyunits JOIN c180_property.users 
   WHERE watermeterrecord.RecordPropertyID = propertyunits.UnitID AND RecordPropertyID = ?
   AND users.UserID = watermeterrecord.RecordUserID
-  ORDER BY RecordTime DESC;
+  ORDER BY RecordTime DESC LIMIT 12;
   `,[id]);
 
   return {

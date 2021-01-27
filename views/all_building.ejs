@@ -1,0 +1,63 @@
+<html>
+    <body onload="UserAction()">
+        <h2 id="buildingName"></h2>
+        <!--<p id="a"></p> -->
+
+        <p id="ok"></p>
+        <table id = "demo"></table>
+
+    </body>
+    <script>
+        
+        
+        function UserAction() {
+            var apiUrl = 'http://localhost:3000/buildings/';
+            fetch(apiUrl,{
+                    method: 'get',
+                    headers: new Headers({
+                        'Authorization': 'Bearer '+ sessionStorage.getItem("token"), 
+                        'Accept':'application/json'
+                        }), 
+                    }
+
+            ).then(response => {
+                return response.json();
+            }).then(data => {
+                // Work with JSON data here
+                console.log(data);
+                var x = ""
+                var table = document.getElementById("demo");
+        //document.getElementById("gg").innerHTML = obj[0].UnitBlock +"-" + obj[0].UnitName + "-" + obj[0].UnitFloor
+
+                //document.getElementById("buildingName").innerHTML = data.Records[0].UnitBlock + "-" + data.Records[0].UnitName + "-" + data.Records[0].UnitFloor
+       
+                for (i in data.Buildings){
+                    //x += "<p>"+ data.Records[i].RecordTime+"</p>";
+                    var row = table.insertRow(-1)
+                    var col1 = row.insertCell(0)
+                    var col2 = row.insertCell(1)
+                    
+                    col1.innerHTML = data.Buildings[i].UnitBlock + "-" + data.Buildings[i].UnitName + "-" + data.Buildings[i].UnitFloor;
+                    col2.innerHTML = data.Buildings[i].LastRecordTime;
+                    
+                }
+                document.getElementById("ok").innerHTML = x;
+            }).catch(err => {
+                // Do something for an error here
+            });
+        }
+/*
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    alert(this.responseText);
+                }
+            };
+            xhttp.open("GET", "http://localhost:3000/buildings/1", true);
+            xhttp.setRequestHeader("Authorization", "Bearer " + decodeURIComponent(document.cookie).slice(8,));
+            xhttp.send()
+        }
+
+        */
+    </script>
+</html>
