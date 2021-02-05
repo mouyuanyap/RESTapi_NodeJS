@@ -2,8 +2,8 @@
     <body onload="UserAction()">
         <h2 id="buildingName"></h2>
         <!--<p id="a"></p> -->
-
-        <p id="ok"></p>
+ 
+        <!--<p id="ok"></p>-->
         <table id = "demo"></table>
 
     </body>
@@ -14,7 +14,7 @@
             var apiUrl = 'http://localhost:3000/buildings/1';
             var obj = JSON.parse('<%-title%>');
         
-            document.getElementById("ok").innerHTML = obj.token
+            //document.getElementById("ok").innerHTML = obj.token
             sessionStorage.clear()
             sessionStorage.setItem("token", obj.token);
 

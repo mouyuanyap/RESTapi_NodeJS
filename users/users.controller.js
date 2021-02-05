@@ -30,14 +30,14 @@ function authenticateSchema(req, res, next) {
 
 function authenticate(req, res, next) {
     if (req.header('Content-Type').includes('application/json')){
-        userService.authenticate(req.body)
+        userService.authenticate1(req.body)
         .then(
             (user) => {
                 res.json(user);
             })
         .catch(next);
     }else{
-        userService.authenticate(req.body)
+        userService.authenticate2(res, req.body)
         .then(
             (user) => {
                 console.log(user)

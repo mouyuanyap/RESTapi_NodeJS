@@ -23,7 +23,6 @@ router.get('/',authorize(),async function(req, res, next) {
   
 });
 
-
 router.get('/get/:id',  authorize(),async function(req, res, next) {
   try {
     res.json(await building.getOneBuilding(req.params.id));
@@ -93,7 +92,29 @@ router.post('/:id', async function(req, res, next) {
     console.log(req.body)
     res.json(await building.insert(req.body));
   } catch (err) {
-    console.error(`Error while getting quotes??? `, err.message);
+    console.error(`Error while getting quotes? `, err.message);
+    next(err);
+  }
+});
+
+router.post('/verify/:id', authorize(),async function(req, res, next) {
+  try {
+    console.log(req.body)
+    res.json(await building.verifyRecord(req.body));
+  } catch (err) {
+    console.error(`Error while getting quotes `, err.message);
+    next(err);
+  }
+});
+
+
+router.post('/add/:id', authorize(),async function(req, res, next) {
+  try {
+    console.log('tf')
+    console.log(req.body)
+    res.json(await building.addBuilding(req.body));
+  } catch (err) {
+    console.error(`Error while getting quotes `, err.message);
     next(err);
   }
 });

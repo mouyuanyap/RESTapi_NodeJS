@@ -1,17 +1,81 @@
 <html>
-    <body onload="UserAction()">
+    <head>
+        <style>
+        table, td, th {
+          border: 1px solid black;
+        }
+        
+        table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+        </style>
+    </head>
+
+
+    <body>
         <h2 id="buildingName"></h2>
         <!--<p id="a"></p> -->
 
+        <form name="building" id="building" action="javascript:;" onsubmit="UserAction(this)">
+            Block: <select name="block" id="block">
+                <option value="All" selected="selected">All</option>
+              </select>
+              <br><br>
+            Floor: <select name="floor" id="floor">
+                <option value="All" selected="selected">All</option>
+              </select>
+              <br><br>
+            
+              <input type="submit" value="Submit">  
+        </form>
+        <button name="verifyAll" type="Button" id="verifyAll">Verify all</button>    
+        <button name="logout" type="Button" id="logout">Logout</button>
         <p id="ok"></p>
+        <p id="kk"></p>
         <table id = "demo"></table>
 
     </body>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.7.0/moment.min.js" type="text/javascript"></script>
+    
     <script>
-        
-        
-        function UserAction() {
-            var apiUrl = 'http://localhost:3000/buildings/';
+        var buildingID = [];
+
+        var BuildingType = {
+            
+            "LIVIA": ['01','02','03','03A','05','06','07','08','09','10','11','12','13','13A','15','16','17','18','19','G','UG'],
+            "A": ['1','2','3','3A','G','UG'],
+            "B": ['1','2','3','3A','G','UG'],
+            "C": ['1','2','UG'],
+            "CS": [],
+            "D": ['1','2','UG'],
+            "F": ['1','2','UG']
+        }
+
+        window.onload = function() {
+            var blockSel = document.getElementById("block");
+            var floorSel = document.getElementById("floor");
+            
+            for (var x in BuildingType) {
+                blockSel.options[blockSel.options.length] = new Option(x, x);
+            }
+            blockSel.onchange = function() {
+                //empty Chapters- and Topics- dropdowns
+                floorSel.length = 1;
+            
+                //display correct values
+                var z = BuildingType[this.value];
+                for (var i = 0; i < z.length; i++) {
+                    floorSel.options[floorSel.options.length] = new Option(z[i], z[i]);
+                }
+            }
+        }
+
+
+        function getBuildingDetails(x,a) {
+
+            var apiUrl = 'http://localhost:3000/buildings/' + x;
+
             fetch(apiUrl,{
                     method: 'get',
                     headers: new Headers({
@@ -21,43 +85,452 @@
                     }
 
             ).then(response => {
+                resStatus = response.status;
+                if(resStatus == "401"){
+                    alert("Please login!");
+                    location.replace("http://localhost:3000/login")
+                }
+                return response.json();
+            }).then(data => {
+
+                // switch (resStatus) {
+                //     case 201:
+                //         console.log('success')
+                //         break
+                //     case 401:
+                //         console.log("authorization error")
+                //     case 500:
+                //         console.log('server error, try again')
+                //         break
+                //     default:
+                //         console.log('unhandled')
+                //         break
+                // }
+                                // Work with JSON data here
+                console.log(data.Records[0]);
+                var table = document.getElementById("demo");
+                if (table.rows[a].cells.length==9){
+                    
+                    table.rows[a].deleteCell(-1);
+                }else{
+                    
+                    var col = table.rows[a].insertCell(-1);
+                    var x = document.createElement("TABLE");
+                    var header = x.insertRow(-1);
+                    header.insertCell(0).innerHTML = "Record Date";
+                    header.insertCell(1).innerHTML = "Reading";
+                    header.insertCell(2).innerHTML = "Recoder Name";
+
+
+                    for (i in data.Records){
+                        var row1 = x.insertRow(-1);
+                                            
+                        var col1 = row1.insertCell(0);
+                        var col2 = row1.insertCell(1);
+                        var col3 = row1.insertCell(2);
+                        
+                        col1.innerHTML = moment(data.Records[i].RecordTime).format('llll');
+                        col2.innerHTML = data.Records[i].RecordReading;
+                        col3.innerHTML = data.Records[i].UserName;
+                        //col4.innerHTML = data.Records[i].RecordStatus;
+
+                    }            
+                    col.appendChild(x);
+                }
+                
+                
+                
+            }).catch(err => {
+                console.error(err)
+                // Do something for an error here
+            });
+
+        }
+
+        function VerifyRecord(a,b){
+            var aa = {
+                id: a
+            };
+            var xmlhttp = new XMLHttpRequest();   // new HttpRequest instance 
+            var theUrl = "http://localhost:3000/buildings/verify/0";
+            xmlhttp.open("POST", theUrl);
+            xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+            xmlhttp.setRequestHeader("Authorization", "Bearer " + sessionStorage.getItem("token"));
+            xmlhttp.send(JSON.stringify(aa));
+            setTimeout(function (){
+
+                // Something you want delayed.
+                UserAction()
+
+            }, 50);
+        }
+        document.getElementById("verifyAll").onclick = function(){
+            for (i in buildingID){
+                VerifyRecord(buildingID[i],0)
+            }
+            
+        };
+
+        document.getElementById("logout").onclick = function(){
+            sessionStorage.clear();
+            location.replace("http://localhost:3000/login")            
+            
+        };
+
+
+        function UserAction() {
+
+            var block = document.building[0].value;
+            var floor = document.building[1].value;
+            if(floor == "All" && block =="All"){
+                var apiUrl = 'http://localhost:3000/buildings/';
+            }else if (floor =="All"){
+                var apiUrl = 'http://localhost:3000/buildings/filterBlock/'+block;
+            }else if (block =="All"){
+                var apiUrl = 'http://localhost:3000/buildings/filterFloor/'+floor;
+            }else{
+                var apiUrl = 'http://localhost:3000/buildings/filterAll/'+block+'/'+floor;
+            }
+            
+            fetch(apiUrl,{
+                    method: 'get',
+                    headers: new Headers({
+                        'Authorization': 'Bearer '+ sessionStorage.getItem("token"), 
+                        'Accept':'application/json'
+                        }), 
+                    }
+
+            ).then(response => {
+                //console.log(response.status);
+                resStatus = response.status;
+                if(resStatus == "401"){
+                    alert("Please login!");
+                    location.replace("http://localhost:3000/login")
+                }
                 return response.json();
             }).then(data => {
                 // Work with JSON data here
                 console.log(data);
                 var x = ""
                 var table = document.getElementById("demo");
+
+                while ( table.rows.length > 0 )
+                {
+                    table.deleteRow(0);
+                }
         //document.getElementById("gg").innerHTML = obj[0].UnitBlock +"-" + obj[0].UnitName + "-" + obj[0].UnitFloor
 
                 //document.getElementById("buildingName").innerHTML = data.Records[0].UnitBlock + "-" + data.Records[0].UnitName + "-" + data.Records[0].UnitFloor
        
+                var header = table.insertRow(-1);
+                header.insertCell(0).innerHTML = "Unit Number";
+                header.insertCell(1).innerHTML = "Record Date";
+                header.insertCell(2).innerHTML = "Previous Reading";
+                header.insertCell(3).innerHTML = "Current Reading";
+                header.insertCell(4).innerHTML = "Current Usage";
+                header.insertCell(5).innerHTML = "Average Usage";
+                header.insertCell(6).innerHTML = "Status";
+                header.insertCell(7).innerHTML = "";
+                header.insertCell(8).innerHTML = "History";
+
+                var a = 1;
+                buildingID = [];
                 for (i in data.Buildings){
                     //x += "<p>"+ data.Records[i].RecordTime+"</p>";
                     var row = table.insertRow(-1)
+                                        
                     var col1 = row.insertCell(0)
                     var col2 = row.insertCell(1)
-                    
-                    col1.innerHTML = data.Buildings[i].UnitBlock + "-" + data.Buildings[i].UnitName + "-" + data.Buildings[i].UnitFloor;
-                    col2.innerHTML = data.Buildings[i].LastRecordTime;
-                    
+                    var col3 = row.insertCell(2)
+                    var col4 = row.insertCell(3)
+                    var col5 = row.insertCell(4)
+                    var col6 = row.insertCell(5)
+                    var col7 = row.insertCell(6)
+                    var col8 = row.insertCell(7)
+
+                    if (data.Buildings[i].UnitBlock=="LIVIA" || data.Buildings[i].UnitBlock == "F"){
+                        col1.innerHTML = data.Buildings[i].UnitBlock+ "-" + data.Buildings[i].UnitFloor + "-" + data.Buildings[i].UnitName ;
+                    }else if (data.Buildings[i].UnitBlock=="CS") {
+                        col1.innerHTML = "Centerstage"
+                    }
+                    else{
+                        col1.innerHTML = data.Buildings[i].UnitBlock + "-" + data.Buildings[i].UnitName + "-" + data.Buildings[i].UnitFloor;
+                    }
+                                        
+                    col2.innerHTML = moment(data.Buildings[i].LastRecordTime).format('llll');
+                    col3.innerHTML = data.Buildings[i].PreviousRecordReading;
+                    col4.innerHTML = data.Buildings[i].CurrentRecordReading;
+                    col5.innerHTML = data.Buildings[i].CurrentRecordReading - data.Buildings[i].PreviousRecordReading;
+                    col6.innerHTML = data.Buildings[i].AverageUsage;
+                    col7.innerHTML = data.Buildings[i].RecordStatus;
+                    if (data.Buildings[i].RecordStatus == "Pending" || data.Buildings[i].RecordStatus == "Verify"){
+                        col7.innerHTML =  col7.innerHTML + "  <button name=\"ver"+data.Buildings[i].UnitID +"\" type=\"Button\" onclick=\"VerifyRecord("+ data.Buildings[i].UnitID +"," + a +")\">Verify </button>";
+                    }
+                    col8.innerHTML = "<button name=\""+data.Buildings[i].UnitID +"\" type=\"Button\" onclick=\"getBuildingDetails("+ data.Buildings[i].UnitID +"," + a +")\">Details </button>";
+                    a=a+1;
+                    buildingID.push(data.Buildings[i].UnitID);
                 }
+                //console.log(buildingID);
                 document.getElementById("ok").innerHTML = x;
             }).catch(err => {
                 // Do something for an error here
             });
         }
-/*
-            var xhttp = new XMLHttpRequest();
-            xhttp.onreadystatechange = function() {
-                if (this.readyState == 4 && this.status == 200) {
-                    alert(this.responseText);
-                }
-            };
-            xhttp.open("GET", "http://localhost:3000/buildings/1", true);
-            xhttp.setRequestHeader("Authorization", "Bearer " + decodeURIComponent(document.cookie).slice(8,));
-            xhttp.send()
-        }
-
-        */
     </script>
 </html>
+            
+
+
+<!--
+
+            var floor = ['01','02','03','03A','05','06','07','08','09','10','11','12','13','13A','15','16','17','18','19','G','UG']
+            var floor2 = ['01','02','G','UG']
+            var floor3 = ['01','02','03','03A','G','UG']
+            var floor4 = ['15','16','17','18','19','20','21','22','23','23A','25','26','27','28','29','30']
+            var floor5 = ['1','2','UG']
+            var floor6 = ['31','32','33','33A','35','36','37','38','39','40','41','42','43','43A','61','62','63','63A','65','66','67','68','69','70','71','72','73']
+            var floor7 = ['45','46','47','48','49']
+            var floor8 = ['50','51','52','53']
+            var floor9 = ['53A','55','56','57','58','59','60']
+            var floor10 = ['1','2']
+            var floor11 = ['01','02','03','03A','05','06','07','08']
+            var floor12 = ['01','02','03','03A','05']
+
+            for(i=0;i<5;i++){
+                    var aa = {
+                        UnitBlock :"LIVIA",
+                        UnitFloor : "UG",
+                        UnitName: floor12[i],
+                        LastRecordTime:"2000-01-01",
+                        PreviousRecordReading: 0,
+                        CurrentRecordReading: 0
+                    };
+                    var xmlhttp = new XMLHttpRequest();   // new HttpRequest instance 
+                    var theUrl = "http://localhost:3000/buildings/add/1";
+                    xmlhttp.open("POST", theUrl);
+                    xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+                    xmlhttp.setRequestHeader("Authorization", "Bearer " + sessionStorage.getItem("token"));
+                    xmlhttp.send(JSON.stringify(aa));
+                }
+
+            for(i=0;i<8;i++){
+                    var aa = {
+                        UnitBlock :"F",
+                        UnitFloor : "UG",
+                        UnitName: floor11[i],
+                        LastRecordTime:"2000-01-01",
+                        PreviousRecordReading: 0,
+                        CurrentRecordReading: 0
+                    };
+                    var xmlhttp = new XMLHttpRequest();   // new HttpRequest instance 
+                    var theUrl = "http://localhost:3000/buildings/add/1";
+                    xmlhttp.open("POST", theUrl);
+                    xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+                    xmlhttp.setRequestHeader("Authorization", "Bearer " + sessionStorage.getItem("token"));
+                    xmlhttp.send(JSON.stringify(aa));
+                }
+            
+            for (j=0;j<2;j++){
+                for(i=0;i<8;i++){
+                    var aa = {
+                        UnitBlock :"F",
+                        UnitFloor : floor10[j],
+                        UnitName: floor11[i],
+                        LastRecordTime:"2000-01-01",
+                        PreviousRecordReading: 0,
+                        CurrentRecordReading: 0
+                    };
+                    var xmlhttp = new XMLHttpRequest();   // new HttpRequest instance 
+                    var theUrl = "http://localhost:3000/buildings/add/1";
+                    xmlhttp.open("POST", theUrl);
+                    xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+                    xmlhttp.setRequestHeader("Authorization", "Bearer " + sessionStorage.getItem("token"));
+                    xmlhttp.send(JSON.stringify(aa));
+                }
+            }
+
+
+            for (i=0;i<7;i++){
+                for (j=0;j<3;j++){
+                    var aa = {
+                        UnitBlock :"D",
+                        UnitFloor : floor5[j],
+                        UnitName: floor9[i],
+                        LastRecordTime:"2000-01-01",
+                        PreviousRecordReading: 0,
+                        CurrentRecordReading: 0
+                    };
+                    var xmlhttp = new XMLHttpRequest();   // new HttpRequest instance 
+                    var theUrl = "http://localhost:3000/buildings/add/1";
+                    xmlhttp.open("POST", theUrl);
+                    xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+                    xmlhttp.setRequestHeader("Authorization", "Bearer " + sessionStorage.getItem("token"));
+                    xmlhttp.send(JSON.stringify(aa));
+                }
+            }
+
+
+            
+            for (i=0;i<4;i++){
+                var z = 3;
+                if(i==0 || i==2){
+                    z = 2;
+                }
+                for (j=0;j<z;j++){
+                    var aa = {
+                UnitBlock :"D",
+                UnitFloor : floor5[j],
+                UnitName: floor8[i],
+                LastRecordTime:"2000-01-01",
+                PreviousRecordReading: 0,
+                CurrentRecordReading: 0
+                };
+                var xmlhttp = new XMLHttpRequest();   // new HttpRequest instance 
+                var theUrl = "http://localhost:3000/buildings/add/1";
+                xmlhttp.open("POST", theUrl);
+                xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+                xmlhttp.setRequestHeader("Authorization", "Bearer " + sessionStorage.getItem("token"));
+                xmlhttp.send(JSON.stringify(aa));
+
+                }
+            }
+
+
+
+            for (i=0;i<5;i++){
+                for(j=0;j<3;j++){
+                    var aa = {
+                UnitBlock :"D",
+                UnitFloor : floor5[j],
+                UnitName: floor7[i],
+                LastRecordTime:"2000-01-01",
+                PreviousRecordReading: 0,
+                CurrentRecordReading: 0
+                };
+                var xmlhttp = new XMLHttpRequest();   // new HttpRequest instance 
+                var theUrl = "http://localhost:3000/buildings/add/1";
+                xmlhttp.open("POST", theUrl);
+                xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+                xmlhttp.setRequestHeader("Authorization", "Bearer " + sessionStorage.getItem("token"));
+                xmlhttp.send(JSON.stringify(aa));
+                }
+            }
+
+            var aa = {
+                UnitBlock :"CS",
+                UnitFloor : " ",
+                UnitName: " ",
+                LastRecordTime:"2000-01-01",
+                PreviousRecordReading: 0,
+                CurrentRecordReading: 0
+                };
+                var xmlhttp = new XMLHttpRequest();   // new HttpRequest instance 
+                var theUrl = "http://localhost:3000/buildings/add/1";
+                xmlhttp.open("POST", theUrl);
+                xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+                xmlhttp.setRequestHeader("Authorization", "Bearer " + sessionStorage.getItem("token"));
+                xmlhttp.send(JSON.stringify(aa));
+            
+            for (i=0;i<27;i++){
+                for(j=0;j<3;j++){
+                    var aa = {
+                UnitBlock :"C",
+                UnitFloor : floor5[j],
+                UnitName: floor6[i],
+                LastRecordTime:"2000-01-01",
+                PreviousRecordReading: 0,
+                CurrentRecordReading: 0
+                };
+                var xmlhttp = new XMLHttpRequest();   // new HttpRequest instance 
+                var theUrl = "http://localhost:3000/buildings/add/1";
+                xmlhttp.open("POST", theUrl);
+                xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+                xmlhttp.setRequestHeader("Authorization", "Bearer " + sessionStorage.getItem("token"));
+                xmlhttp.send(JSON.stringify(aa));
+                }
+            }
+
+
+            for (i=0;i<16;i++){
+                for(j=0;j<4;j++){
+                    var aa = {
+                UnitBlock :"B",
+                UnitFloor : floor2[j],
+                UnitName: floor4[i],
+                LastRecordTime:"2000-01-01",
+                PreviousRecordReading: 0,
+                CurrentRecordReading: 0
+                };
+                var xmlhttp = new XMLHttpRequest();   // new HttpRequest instance 
+                var theUrl = "http://localhost:3000/buildings/add/1";
+                xmlhttp.open("POST", theUrl);
+                xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+                xmlhttp.setRequestHeader("Authorization", "Bearer " + sessionStorage.getItem("token"));
+                xmlhttp.send(JSON.stringify(aa));
+                }
+            }
+
+
+
+            
+
+            for(j=0;j<6;j++){
+                var aa = {
+                UnitBlock :"A",
+                UnitFloor : floor3[j],
+                UnitName: "13A",
+                LastRecordTime:"2000-01-01",
+                PreviousRecordReading: 0,
+                CurrentRecordReading: 0
+                };
+                var xmlhttp = new XMLHttpRequest();   // new HttpRequest instance 
+                var theUrl = "http://localhost:3000/buildings/add/1";
+                xmlhttp.open("POST", theUrl);
+                xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+                xmlhttp.setRequestHeader("Authorization", "Bearer " + sessionStorage.getItem("token"));
+                xmlhttp.send(JSON.stringify(aa));
+            }
+
+            
+            for (i=0;i<12;i++){
+                for(j=0;j<4;j++){
+                    var aa = {
+                    UnitBlock :"A",
+                    UnitFloor : floor2[j],
+                    UnitName: floor[i],
+                    LastRecordTime:"2000-01-01",
+                    PreviousRecordReading: 0,
+                    CurrentRecordReading: 0
+                    };
+                    var xmlhttp = new XMLHttpRequest();   // new HttpRequest instance 
+                    var theUrl = "http://localhost:3000/buildings/add/1";
+                    xmlhttp.open("POST", theUrl);
+                    xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+                    xmlhttp.setRequestHeader("Authorization", "Bearer " + sessionStorage.getItem("token"));
+                    xmlhttp.send(JSON.stringify(aa));
+                }
+            }
+            
+            for (i=0;i<19;i++){
+                for(j=0;j<10;j++){
+                    var aa = {
+                    UnitBlock :"LIVIA",
+                    UnitFloor : floor[i],
+                    UnitName: floor[j],
+                    LastRecordTime:"2000-01-01",
+                    PreviousRecordReading: 0,
+                    CurrentRecordReading: 0
+                    };
+                    var xmlhttp = new XMLHttpRequest();   // new HttpRequest instance 
+                    var theUrl = "http://localhost:3000/buildings/add/1";
+                    xmlhttp.open("POST", theUrl);
+                    xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+                    xmlhttp.setRequestHeader("Authorization", "Bearer " + sessionStorage.getItem("token"));
+                    xmlhttp.send(JSON.stringify(aa));
+
+                }
+            }
+            */
+
+        -->
+

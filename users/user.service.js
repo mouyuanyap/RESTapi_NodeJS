@@ -4,7 +4,8 @@ const bcrypt = require('bcryptjs');
 const db = require('../_helpers/db');
 
 module.exports = {
-    authenticate,
+    authenticate1,
+    authenticate2,
     getAll,
     getById,
     create,
@@ -12,11 +13,25 @@ module.exports = {
     delete: _delete
 };
 
-async function authenticate({ username, password }) {
+async function authenticate1({ username, password }) {
     const user = await db.User.scope('withHash').findOne({ where: { username } });
 
     if (!user || !(await bcrypt.compare(password, user.hash)))
         throw 'Username or password is incorrect';
+        //res.render('autherror')
+
+    // authentication successful
+    const token = jwt.sign({ sub: user.id }, config.secret, { expiresIn: '3h' });
+    return { ...omitHash(user.get()), token };
+}
+
+
+async function authenticate2(res, { username, password }) {
+    const user = await db.User.scope('withHash').findOne({ where: { username } });
+
+    if (!user || !(await bcrypt.compare(password, user.hash)))
+        //throw 'Username or password is incorrect';
+        res.render('autherror')
 
     // authentication successful
     const token = jwt.sign({ sub: user.id }, config.secret, { expiresIn: '3h' });
